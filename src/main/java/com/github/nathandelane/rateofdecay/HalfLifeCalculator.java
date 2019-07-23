@@ -1,6 +1,7 @@
 package com.github.nathandelane.rateofdecay;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 public class HalfLifeCalculator {
   
@@ -18,13 +19,16 @@ public class HalfLifeCalculator {
    * @param hoursSinceDosage
    * @return
    */
-  public static BigDecimal calculateRemainingMgAtTime(final int initialMg, final int halfLifeInHours, final int hoursSinceDosage) {
-    final BigDecimal bd_initialMg = BigDecimal.valueOf(initialMg);
-    final BigDecimal oneHalf = BigDecimal.valueOf(0.5);
+  public static BigDecimal calculateRemainingMgAtTime(final BigInteger initialMg, final int halfLifeInHours, final int hoursSinceDosage) {
+    final BigDecimal bd_initialMg = new BigDecimal(initialMg);
+    final BigDecimal oneHalf = BigDecimal.valueOf(0.50000);
+    final BigDecimal bd_halfLifeInHours = BigDecimal.valueOf(halfLifeInHours);
+    final BigDecimal bd_hoursSinceDosage = BigDecimal.valueOf(hoursSinceDosage);
+    final BigDecimal exponent = bd_hoursSinceDosage.divide(bd_halfLifeInHours, DefaultScale.INT_SCALE, DefaultScale.ROUNDING_MODE);
 
     final double d_oneHalf = oneHalf.doubleValue();
-    final double exponent = (double) hoursSinceDosage / (double) halfLifeInHours;
-    final double result = Math.pow(d_oneHalf, exponent);
+    final double d_exponent = exponent.doubleValue();
+    final double result = Math.pow(d_oneHalf, d_exponent);
     
     final BigDecimal bd_result = BigDecimal.valueOf(result);
     final BigDecimal currentMgAtTime = bd_initialMg.multiply(bd_result);
@@ -45,7 +49,7 @@ public class HalfLifeCalculator {
    * @return
    */
   public static BigDecimal calculateAccumulatedMgAtTimeBasedOnRegularDosing(
-    final int initialMg,
+    final BigInteger initialMg,
     final int halfLifeInHours,
     final int hoursAtNextDosage,
     final int numberOfDoses
@@ -57,7 +61,7 @@ public class HalfLifeCalculator {
       BigDecimal result = calculateRemainingMgAtTime(initialMg, halfLifeInHours, hoursAtNextDosage);
       
       for (int dose = 1; dose < numberOfDoses; dose++) {
-        final int accumulatedMg = result.intValue();
+        final BigInteger accumulatedMg = result.toBigInteger();
         final BigDecimal remainingAtNextDosage = calculateRemainingMgAtTime(accumulatedMg, halfLifeInHours, hoursAtNextDosage);
         
         result = result.add(remainingAtNextDosage);
@@ -67,6 +71,31 @@ public class HalfLifeCalculator {
       
       return truncatedResult;
     }
+  }
+  
+  /**
+   * Calculate the number of hours that the substance will remain in the body assuming no further dosing is performed.
+   * @param currentMg
+   * @param halfLifeInHours
+   * @return
+   */
+  public static int calculateHoursRemainingUntilNeglegible(final BigInteger currentMg, final int halfLifeInHours) {
+    final BigDecimal neglegibilityThreshold = BigDecimal.valueOf(0.01000).setScale(DefaultScale.INT_SCALE, DefaultScale.ROUNDING_MODE);
+    
+    int accumulatedHours = 0;
+    
+    BigDecimal milligramsRemaining = new BigDecimal(currentMg);
+    
+    while (milligramsRemaining.compareTo(neglegibilityThreshold) > 0) {
+      accumulatedHours += 1;
+      
+      final BigInteger milligramsRemainingAsBigInt = milligramsRemaining.toBigInteger();
+      final BigDecimal calculatedMgs = calculateRemainingMgAtTime(milligramsRemainingAsBigInt, halfLifeInHours, accumulatedHours);
+      
+      milligramsRemaining = calculatedMgs.setScale(DefaultScale.INT_SCALE, DefaultScale.ROUNDING_MODE);
+    }
+    
+    return accumulatedHours;
   }
   
 }
