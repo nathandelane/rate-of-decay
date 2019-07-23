@@ -11,7 +11,8 @@ public class HalfLifeCalculator {
   /**
    * Calculate the current number of milligrams in the human body based on initial amount ({@code initialMg}), the half-life 
    * of the substance in hours (whole numbers only, {@code halfLifeInHours}), and the number of hours since the dosage 
-   * ({@code hoursSinceDosage}).
+   * ({@code hoursSinceDosage}). This is based on the formula {@code A = P * 0.5^(t/T)} where <i>A</i> is the amount remaining, 
+   * <i>P</i> is the initial dosage, <i>t</i> is the hourse since the dosage, and <i>T</i> is the half-life in hours. 
    * @param initialMg
    * @param halfLifeInHours
    * @param hoursSinceDosage
@@ -35,7 +36,8 @@ public class HalfLifeCalculator {
   
   /**
    * Calculate the current number of milligrams in the human body based on initial amount, half-life in hours (whole numbers only), 
-   * Hours from previous does to next regular dose, and the number of doses.
+   * Hours from previous does to next regular dose, and the number of doses. This utilizes {@link #calculateRemainingMgAtTime(int, int, int)}
+   * to determine the current number of milligrams base don accumulation.
    * @param initialMg
    * @param halfLifeInHours
    * @param hoursAtNextDosage
